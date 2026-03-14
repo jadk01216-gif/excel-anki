@@ -1,0 +1,6 @@
+pandas
+genanki
+requests
+PyQt6
+deep-translator
+openpyxl
