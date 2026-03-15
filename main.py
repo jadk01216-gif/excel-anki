@@ -23,6 +23,15 @@ from converter import AnkiConverter
 # File to store persistent settings
 SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json")
 
+def get_resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
+
 class ConversionThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(bool, str)
@@ -53,11 +62,11 @@ class MainWindow(QMainWindow):
         # 設定主題
         setTheme(Theme.LIGHT)
         
-        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.3 (PyQt6)")
+        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.4 (PyQt6)")
         self.setMinimumSize(600, 750)
         
         # 設定視窗圖標
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "OIP.ico")
+        icon_path = get_resource_path("OIP.ico")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
         

@@ -1,13 +1,9 @@
-import pandas as pd
+import openpyxl
 import genanki
 import requests
 import os
 import re
-import warnings
 from deep_translator import GoogleTranslator
-
-# Suppress openpyxl warning: "Workbook contains no default style"
-warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
 class AnkiConverter:
     def __init__(self, excel_path, output_path, deck_name, include_tts=False, 
@@ -184,66 +180,65 @@ class AnkiConverter:
             return ""
 
     def process(self, progress_callback=None):
-        # Based on detailed inspection:
-        # Row 0: Banner (Skip)
-        # Row 1: Header (Skip)
-        # Data starts from Row 2 (Index 2 in raw)
-        
-        # Load without headers to control indexing manually
-        df = pd.read_excel(self.excel_path, header=None, skiprows=2)
-        
-        # Column 0: Word
-        # Column 1: POS (noun/verb)
-        # Column 2: POS (backup/internal)
-        # Column 3: Translation (Traditional Chinese)
-        # Column 4: Definition/Explanation (English)
-        
-        deck = genanki.Deck(self.deck_id, self.deck_name)
-        
-        total_rows = len(df)
-        for i, row in df.iterrows():
-            if len(row) < 1: continue
+        # Using openpyxl directly for better performance and smaller bundle size
+        try:
+            wb = openpyxl.load_workbook(self.excel_path, data_only=True)
+            sheet = wb.active
             
-            raw_word = row.iloc[0]
-            if pd.isna(raw_word): continue
-            word = str(raw_word).strip()
-            if not word: continue
+            # Rows in openpyxl are 1-indexed. Data starts from index 2 if we skip first 2 rows.
+            rows = list(sheet.iter_rows(values_only=True))
+            data_rows = rows[2:] if len(rows) > 2 else []
             
-            # Translation is at Index 3
-            raw_trans = row.iloc[3] if len(row) > 3 else None
-            translation = str(raw_trans).strip() if not pd.isna(raw_trans) and str(raw_trans).lower() != 'nan' else ""
+            deck = genanki.Deck(self.deck_id, self.deck_name)
             
-            # POS is at Index 1
-            raw_pos = row.iloc[1] if len(row) > 1 else None
-            excel_pos = str(raw_pos).strip() if not pd.isna(raw_pos) and str(raw_pos).lower() != 'nan' else ""
+            total_rows = len(data_rows)
+            for i, row in enumerate(data_rows):
+                if not row or len(row) < 1: continue
+                
+                # Column 0: Word
+                raw_word = row[0]
+                if raw_word is None: continue
+                word = str(raw_word).strip()
+                if not word: continue
+                
+                # Column 1: POS
+                raw_pos = row[1] if len(row) > 1 else None
+                excel_pos = str(raw_pos).strip() if raw_pos is not None and str(raw_pos).lower() != 'nan' else ""
+                
+                # Column 3: Translation
+                raw_trans = row[3] if len(row) > 3 else None
+                translation = str(raw_trans).strip() if raw_trans is not None and str(raw_trans).lower() != 'nan' else ""
+                
+                # Column 4: Explanation
+                raw_exp = row[4] if len(row) > 4 else None
+                excel_exp = str(raw_exp).strip() if raw_exp is not None and str(raw_exp).lower() != 'nan' else ""
+                
+                # Fetch missing info from APIs
+                api_pos, api_exp = self.fetch_word_data(word)
+                
+                # Fill logic
+                final_translation = translation if translation else self.translate_to_chinese(word)
+                final_pos = excel_pos if excel_pos else api_pos
+                final_explanation = excel_exp if excel_exp else api_exp
+                
+                # UI toggles
+                field_pos = final_pos if self.show_pos else ""
+                field_trans = final_translation if self.show_translation else ""
+                field_exp = final_explanation if self.show_explanation else ""
+                
+                tts_tag = f"[anki:tts lang=en_US]{word}[/anki:tts]" if self.include_tts else ""
+                
+                note = genanki.Note(
+                    model=self.model,
+                    fields=[word, field_pos, field_trans, field_exp, tts_tag]
+                )
+                deck.add_note(note)
+                
+                if progress_callback:
+                    progress_callback(int((i + 1) / total_rows * 100))
             
-            # Explanation is at Index 4
-            raw_exp = row.iloc[4] if len(row) > 4 else None
-            excel_exp = str(raw_exp).strip() if not pd.isna(raw_exp) and str(raw_exp).lower() != 'nan' else ""
-            
-            # Fetch missing info from APIs if Excel is empty
-            api_pos, api_exp = self.fetch_word_data(word)
-            
-            # Use Excel data if exists, otherwise fallback to API
-            final_translation = translation if translation else self.translate_to_chinese(word)
-            final_pos = excel_pos if excel_pos else api_pos
-            final_explanation = excel_exp if excel_exp else api_exp
-            
-            # Respect UI toggles
-            field_pos = final_pos if self.show_pos else ""
-            field_trans = final_translation if self.show_translation else ""
-            field_exp = final_explanation if self.show_explanation else ""
-            
-            tts_tag = f"[anki:tts lang=en_US]{word}[/anki:tts]" if self.include_tts else ""
-            
-            note = genanki.Note(
-                model=self.model,
-                fields=[word, field_pos, field_trans, field_exp, tts_tag]
-            )
-            deck.add_note(note)
-            
-            if progress_callback:
-                progress_callback(int((i + 1) / total_rows * 100))
-        
-        genanki.Package(deck).write_to_file(self.output_path)
-        return True
+            genanki.Package(deck).write_to_file(self.output_path)
+            return True
+        except Exception as e:
+            print(f"Error in process: {e}")
+            raise e
