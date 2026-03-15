@@ -1,6 +1,14 @@
 import sys
 import os
 import json
+import ctypes
+
+# Set AppUserModelID to ensure the taskbar icon shows correctly on Windows
+try:
+    myappid = 'jadk.exceltoanki.v004'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
 
 # Force qfluentwidgets to use PyQt6
 os.environ['QF_BINDING'] = 'PyQt6'
