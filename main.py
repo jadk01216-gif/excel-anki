@@ -28,9 +28,6 @@ from qfluentwidgets import (PushButton, PrimaryPushButton, LineEdit, CheckBox,
 # Import converter
 from converter import AnkiConverter
 
-# File to store persistent settings
-SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json")
-
 def get_resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -39,6 +36,34 @@ def get_resource_path(relative_path):
     except Exception:
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
+
+def get_settings_path():
+    """ 
+    Get the path for settings.json. 
+    If the current directory is not writable (like Program Files), 
+    use the AppData directory.
+    """
+    local_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "settings.json")
+    
+    # Try to write to local directory to test permissions
+    try:
+        if os.path.exists(local_path):
+            with open(local_path, 'a'):
+                pass
+        else:
+            with open(local_path, 'w'):
+                pass
+            os.remove(local_path)
+        return local_path
+    except (IOError, OSError):
+        # Local directory not writable, use AppData
+        app_data_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser("~")), "ExcelToAnki")
+        if not os.path.exists(app_data_dir):
+            os.makedirs(app_data_dir, exist_ok=True)
+        return os.path.join(app_data_dir, "settings.json")
+
+# File to store persistent settings
+SETTINGS_FILE = get_settings_path()
 
 class ConversionThread(QThread):
     progress = pyqtSignal(int)
