@@ -5,7 +5,7 @@ import ctypes
 
 # Set AppUserModelID to ensure the taskbar icon shows correctly on Windows
 try:
-    myappid = 'jadk.exceltoanki.v004'
+    myappid = 'jadk.exceltoanki.v005'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except Exception:
     pass

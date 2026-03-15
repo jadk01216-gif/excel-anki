@@ -1,13 +1,13 @@
 [Setup]
 AppName=劍橋字典Excel轉Anki
-AppVersion=0.0.4
+AppVersion=0.0.5
 DefaultDirName={pf}\CambridgeDictAnki
 DefaultGroupName=CambridgeDictAnki
 UninstallDisplayIcon={app}\ExcelToAnki.exe
 Compression=lzma2
 SolidCompression=yes
 OutputDir=output
-OutputBaseFilename=EnglishLearningSetup_v0.0.4
+OutputBaseFilename=EnglishLearningSetup_v0.0.5
 
 [Files]
 Source: "dist\ExcelToAnki\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
