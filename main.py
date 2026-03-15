@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
         # 設定主題
         setTheme(Theme.LIGHT)
         
-        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.5 Beta (PyQt6)")
+        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.5 (PyQt6)")
         self.setMinimumSize(600, 750)
         
         # 設定視窗圖標
@@ -80,6 +80,45 @@ class MainWindow(QMainWindow):
         
         self.settings = self.load_settings()
         self.init_ui()
+        
+        # 首次啟動引導：如果沒有設定過匯出路徑，則詢問使用者
+        self.check_first_run()
+
+    def check_first_run(self):
+        if not self.settings.get("last_export_dir"):
+            # 預設路徑設為使用者的 Downloads 資料夾
+            downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+            if not os.path.exists(downloads_path):
+                downloads_path = os.path.expanduser("~")
+                
+            msg_box = MessageBox(
+                "初始設定",
+                f"歡迎使用 v0.0.5 正式版！\n\n您希望將轉換後的 Anki 檔案預設存放在哪裡？\n(預設路徑：{downloads_path})",
+                self
+            )
+            msg_box.yesButton.setText("選擇其他位置")
+            msg_box.noButton.setText("設為下載資料夾")
+            
+            if msg_box.exec():
+                # 選擇其他位置
+                new_dir = QFileDialog.getExistingDirectory(self, "選擇預設匯出資料夾", downloads_path)
+                if new_dir:
+                    self.settings["last_export_dir"] = new_dir
+                else:
+                    self.settings["last_export_dir"] = downloads_path
+            else:
+                # 設為下載資料夾
+                self.settings["last_export_dir"] = downloads_path
+            
+            self.save_settings()
+            InfoBar.info(
+                title="設定完成",
+                content=f"已將預設匯出位置設定為: {self.settings['last_export_dir']}",
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+                parent=self
+            )
 
     def load_settings(self):
         if os.path.exists(SETTINGS_FILE):
@@ -107,7 +146,7 @@ class MainWindow(QMainWindow):
 
         # 標題
         self.title_label = SubtitleLabel()
-        self.title_label.setText("Excel 轉 Anki 工具 v0.0.5 Beta")
+        self.title_label.setText("Excel 轉 Anki 工具 v0.0.5")
         self.layout.addWidget(self.title_label)
 
         # 檔案選擇
