@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
         # 設定主題
         setTheme(Theme.LIGHT)
         
-        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.4 (PyQt6)")
+        self.setWindowTitle("劍橋字典Excel表格轉apkg檔案 v0.0.5 Beta (PyQt6)")
         self.setMinimumSize(600, 750)
         
         # 設定視窗圖標
@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
                     return json.load(f)
             except:
                 pass
-        return {"last_dir": ""}
+        return {"last_import_dir": "", "last_export_dir": ""}
 
     def save_settings(self):
         try:
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
 
         # 標題
         self.title_label = SubtitleLabel()
-        self.title_label.setText("Excel 轉 Anki 工具 v0.0.4")
+        self.title_label.setText("Excel 轉 Anki 工具 v0.0.5 Beta")
         self.layout.addWidget(self.title_label)
 
         # 檔案選擇
@@ -180,16 +180,16 @@ class MainWindow(QMainWindow):
         self.excel_path = None
 
     def select_file(self):
-        last_dir = self.settings.get("last_dir", "")
-        file_path, _ = QFileDialog.getOpenFileName(self, "開啟 Excel 檔案", last_dir, "Excel Files (*.xlsx *.xls)")
+        last_import_dir = self.settings.get("last_import_dir", "")
+        file_path, _ = QFileDialog.getOpenFileName(self, "開啟 Excel 檔案", last_import_dir, "Excel Files (*.xlsx *.xls)")
         if file_path:
             self.excel_path = file_path
             self.file_label.setText(f"已選擇: {os.path.basename(file_path)}")
             self.convert_button.setEnabled(True)
             self.log_area.append(f"已載入檔案: {file_path}")
             
-            # 更新上次目錄
-            self.settings["last_dir"] = os.path.dirname(file_path)
+            # 更新上次匯入目錄
+            self.settings["last_import_dir"] = os.path.dirname(file_path)
             self.save_settings()
             
             # 自動填寫牌組名稱
@@ -214,13 +214,15 @@ class MainWindow(QMainWindow):
             return
 
         base_name = os.path.splitext(os.path.basename(self.excel_path))[0]
-        default_output = os.path.join(self.settings.get("last_dir", ""), f"{base_name}.apkg")
+        # Use last_export_dir, fallback to last_import_dir
+        last_export_dir = self.settings.get("last_export_dir") or self.settings.get("last_import_dir", "")
+        default_output = os.path.join(last_export_dir, f"{base_name}.apkg")
 
         output_path, _ = QFileDialog.getSaveFileName(self, "儲存 Anki 封裝檔", default_output, "Anki Package (*.apkg)")
         if not output_path:
             return
             
-        self.settings["last_dir"] = os.path.dirname(output_path)
+        self.settings["last_export_dir"] = os.path.dirname(output_path)
         self.save_settings()
             
         if os.path.exists(output_path):
