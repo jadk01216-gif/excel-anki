@@ -81,53 +81,69 @@ class MainWindow(QMainWindow):
         self.settings = self.load_settings()
         self.init_ui()
         
-        # 首次啟動引導：如果沒有設定過匯出路徑，則詢問使用者
+        # 首次啟動引導：分別對匯入與匯出路徑進行詢問
         self.check_first_run()
 
     def check_first_run(self):
-        if not self.settings.get("last_export_dir"):
-            # 預設路徑設為使用者的 Downloads 資料夾
-            downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
-            if not os.path.exists(downloads_path):
-                downloads_path = os.path.expanduser("~")
-                
+        # 取得系統下載資料夾作為預設參考
+        downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        if not os.path.exists(downloads_path):
+            downloads_path = os.path.expanduser("~")
+
+        # 1. 處理匯入路徑 (Excel 瀏覽)
+        if not self.settings.get("last_import_dir"):
             msg_box = MessageBox(
-                "初始設定",
-                f"歡迎使用 v0.0.5 正式版！\n\n您希望將轉換後的 Anki 檔案預設存放在哪裡？\n(預設路徑：{downloads_path})",
+                "初始設定 (1/2)",
+                f"歡迎使用 v0.0.5 正式版！\n\n您希望預設在哪裡「瀏覽」您的 Excel 檔案？\n(建議路徑：{downloads_path})",
                 self
             )
             msg_box.yesButton.setText("選擇其他位置")
-            msg_box.noButton.setText("設為下載資料夾")
+            msg_box.cancelButton.setText("設為預設路徑")
             
             if msg_box.exec():
-                # 選擇其他位置
-                new_dir = QFileDialog.getExistingDirectory(self, "選擇預設匯出資料夾", downloads_path)
-                if new_dir:
-                    self.settings["last_export_dir"] = new_dir
-                else:
-                    self.settings["last_export_dir"] = downloads_path
+                new_dir = QFileDialog.getExistingDirectory(self, "選擇預設 Excel 瀏覽資料夾", downloads_path)
+                self.settings["last_import_dir"] = new_dir if new_dir else downloads_path
             else:
-                # 設為下載資料夾
-                self.settings["last_export_dir"] = downloads_path
-            
+                self.settings["last_import_dir"] = downloads_path
             self.save_settings()
-            InfoBar.info(
-                title="設定完成",
-                content=f"已將預設匯出位置設定為: {self.settings['last_export_dir']}",
+
+        # 2. 處理匯出路徑 (APKG 下載)
+        if not self.settings.get("last_export_dir"):
+            msg_box = MessageBox(
+                "初始設定 (2/2)",
+                f"轉換後的 Anki 檔案，您希望預設存放在哪裡？\n(建議路徑：{downloads_path})",
+                self
+            )
+            msg_box.yesButton.setText("選擇其他位置")
+            msg_box.cancelButton.setText("設為預設路徑")
+            
+            if msg_box.exec():
+                new_dir = QFileDialog.getExistingDirectory(self, "選擇預設 APKG 匯出資料夾", downloads_path)
+                self.settings["last_export_dir"] = new_dir if new_dir else downloads_path
+            else:
+                self.settings["last_export_dir"] = downloads_path
+            self.save_settings()
+            
+            InfoBar.success(
+                title="初始化完成",
+                content="預設路徑已設定完畢，您可以隨時在操作時變更，系統會自動記錄新位置。",
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=3000,
+                duration=4000,
                 parent=self
             )
 
     def load_settings(self):
+        settings = {"last_import_dir": "", "last_export_dir": ""}
         if os.path.exists(SETTINGS_FILE):
             try:
                 with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    loaded = json.load(f)
+                    settings.update(loaded)
+                    return settings
             except:
                 pass
-        return {"last_import_dir": "", "last_export_dir": ""}
+        return settings
 
     def save_settings(self):
         try:
