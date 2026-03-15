@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
 
         # 標題
         self.title_label = SubtitleLabel()
-        self.title_label.setText("Excel 轉 Anki 工具 v0.0.3")
+        self.title_label.setText("Excel 轉 Anki 工具 v0.0.4")
         self.layout.addWidget(self.title_label)
 
         # 檔案選擇
