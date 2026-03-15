@@ -14,7 +14,7 @@ except Exception:
 os.environ['QF_BINDING'] = 'PyQt6'
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon
 
 # Create QApplication FIRST - this is critical for Qt to be ready
@@ -81,8 +81,8 @@ class MainWindow(QMainWindow):
         self.settings = self.load_settings()
         self.init_ui()
         
-        # 首次啟動引導：分別對匯入與匯出路徑進行詢問
-        self.check_first_run()
+        # 延遲執行首次啟動引導，確保主視窗先顯示出來 (避免 exec() 阻塞初始化)
+        QTimer.singleShot(600, self.check_first_run)
 
     def check_first_run(self):
         # 取得系統下載資料夾作為預設參考
