@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.show_exp_cb)
         
         self.tts_checkbox = CheckBox()
-        self.tts_checkbox.setText("包含 Anki 原生 TTS (英音)")
+        self.tts_checkbox.setText("包含 Anki 原生 TTS")
         self.tts_checkbox.setChecked(True)
         self.layout.addWidget(self.tts_checkbox)
 
