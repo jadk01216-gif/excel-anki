@@ -30,7 +30,7 @@ class AnkiConverter:
         
         self.model = genanki.Model(
             self.model_id,
-            'Cambridge Dictionary Model v0.0.2',
+            'Cambridge Dictionary Model v0.0.3',
             fields=[
                 {'name': 'Word'},
                 {'name': 'POS'},

@@ -1,0 +1,26 @@
+{
+  "name": "english-learning",
+  "version": "1.0.0",
+  "description": "這是一個將 Excel 單字表轉換為 Anki (.apkg) 格式的 PyQt6 應用程式。",
+  "main": "build_installer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadk01216-gif/excel-anki.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jadk01216-gif/excel-anki/issues"
+  },
+  "homepage": "https://github.com/jadk01216-gif/excel-anki#readme",
+  "devDependencies": {
+    "electron-winstaller": "^5.4.0",
+    "innosetup-compiler": "^6.3.1",
+    "semver": "^7.7.4"
+  }
+}
